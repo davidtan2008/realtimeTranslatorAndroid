@@ -1,0 +1,163 @@
+package com.duiyi.android.domain
+
+object Copy {
+    fun speaking(language: AppLanguage) = language.pick("正在说…", "Speaking…", "話しています…", "말하는 중…", "กำลังพูด…", "Đang nói…")
+    fun listening(language: AppLanguage) = language.pick("聆听中", "Listening", "聞き取り中", "듣는 중", "กำลังฟัง", "Đang nghe")
+    fun recording(language: AppLanguage) = language.pick("记录中", "Recording", "記録中", "기록 중", "กำลังบันทึก", "Đang ghi")
+    fun tapToStart(language: AppLanguage) = language.pick("轻点开始", "Tap to start", "タップして開始", "탭하여 시작", "แตะเพื่อเริ่ม", "Chạm để bắt đầu")
+    fun paused(language: AppLanguage) = language.pick("已暂停", "Paused", "一時停止", "일시 정지", "หยุดชั่วคราว", "Đã tạm dừng")
+    fun preparing(language: AppLanguage) = language.pick("正在准备…", "Getting ready…", "準備中…", "준비 중…", "กำลังเตรียม…", "Đang chuẩn bị…")
+    fun idlePrompt(language: AppLanguage) = language.pick("轻点中间，开始听对面说话。", "Tap the center to start listening.", "中央をタップして、相手の話を聞き始めます。", "가운데를 탭하면 상대의 말을 듣기 시작합니다.", "แตะตรงกลางเพื่อเริ่มฟังอีกฝ่าย", "Chạm vào giữa để bắt đầu nghe đối phương.")
+    fun listeningHint(language: AppLanguage) = language.pick("正在听，请说话。", "Listening. Please speak.", "聞き取り中です。話してください。", "듣는 중입니다. 말씀해 주세요.", "กำลังฟัง กรุณาพูด", "Đang nghe. Hãy nói.")
+    fun googleDictationHint(language: AppLanguage) = language.pick("请对着手机说话。", "Please speak to the phone.", "スマホに向かって話してください。", "휴대폰을 향해 말하세요.", "กรุณาพูดใส่โทรศัพท์", "Hãy nói vào điện thoại.")
+    fun peerIdlePrompt(language: AppLanguage) = language.pick("把手机放在我们中间。", "Place the phone between us.", "スマホを二人の間に置いてください。", "휴대폰을 우리 사이에 두세요.", "วางโทรศัพท์ไว้ระหว่างเรา", "Đặt điện thoại giữa chúng ta.")
+    fun settingsTitle(language: AppLanguage) = language.pick("设置", "Settings", "設定", "설정", "ตั้งค่า", "Cài đặt")
+    fun settingsHint(language: AppLanguage) = language.pick("轻点开始或暂停。长按也可打开设置。", "Tap to start or pause. Touch and hold for settings.", "タップで開始または一時停止。長押しでも設定を開けます。", "탭하면 시작 또는 일시 정지. 길게 눌러도 설정을 엽니다.", "แตะเพื่อเริ่มหรือหยุด แตะค้างก็เปิดการตั้งค่าได้", "Chạm để bắt đầu hoặc tạm dừng. Giữ cũng mở cài đặt.")
+    fun done(language: AppLanguage) = language.pick("完成", "Done", "完了", "완료", "เสร็จ", "Xong")
+    fun clearCaptions(language: AppLanguage) = language.pick("清屏", "Clear", "消去", "지우기", "ล้าง", "Xóa")
+    fun iReadSection(language: AppLanguage) = language.pick("我看的语言", "I read", "自分が読む言語", "내가 읽는 언어", "ภาษาที่ฉันอ่าน", "Ngôn ngữ tôi đọc")
+    fun theyReadSection(language: AppLanguage) = language.pick("对方看的语言", "They read", "相手が読む言語", "상대가 읽는 언어", "ภาษาที่อีกฝ่ายอ่าน", "Ngôn ngữ đối phương đọc")
+    fun swapLanguages(language: AppLanguage) = language.pick("对调双方语言", "Swap languages", "言語を入れ替え", "언어 맞바꾸기", "สลับภาษา", "Đổi chỗ ngôn ngữ")
+    fun fontStandard(language: AppLanguage) = language.pick("标准", "Regular", "標準", "보통", "ปกติ", "Vừa")
+    fun fontLarger(language: AppLanguage) = language.pick("更大", "Larger", "大きく", "더 크게", "ใหญ่ขึ้น", "Lớn hơn")
+    fun fontLargest(language: AppLanguage) = language.pick("最大", "Largest", "最大", "가장 크게", "ใหญ่สุด", "Lớn nhất")
+    fun tableHint(language: AppLanguage) = language.pick("请把手机平放在两人中间。两人请轮流说。", "Lay the phone flat between you. Please take turns speaking.", "スマホを二人の間に平らに置いてください。交互に話してください。", "휴대폰을 둘 사이에 평평하게 두세요. 번갈아 말하세요.", "วางโทรศัพท์ราบระหว่างคุณ ทั้งคู่พูดทีละคน", "Đặt điện thoại nằm ngang giữa hai người. Hãy nói lần lượt.")
+    fun openSettings(language: AppLanguage) = language.pick("去设置", "Open Settings", "設定を開く", "설정 열기", "เปิดการตั้งค่า", "Mở Cài đặt")
+    fun autoStartOn(language: AppLanguage) = language.pick("自动开始", "Auto start", "自動開始", "자동 시작", "เริ่มอัตโนมัติ", "Tự bắt đầu")
+    fun autoStartOff(language: AppLanguage) = language.pick("手动开始", "Manual", "手動", "수동", "เริ่มเอง", "Bắt đầu tay")
+    fun summarize(language: AppLanguage) = language.pick("总结这次对话", "Summarize conversation", "この会話を要約", "이 대화 요약", "สรุปบทสนทนานี้", "Tóm tắt cuộc trò chuyện")
+    fun summaryTitle(language: AppLanguage) = language.pick("对话总结", "Conversation summary", "会話の要約", "대화 요약", "สรุปบทสนทนา", "Tóm tắt cuộc trò chuyện")
+    fun summaryLoading(language: AppLanguage) = language.pick("正在用本机模型整理…", "Summarizing on this phone…", "この端末上で要約しています…", "이 기기에서 요약하는 중…", "กำลังสรุปบนเครื่องนี้…", "Đang tóm tắt trên máy này…")
+    fun copySummary(language: AppLanguage) = language.pick("拷贝", "Copy", "コピー", "복사", "คัดลอก", "Sao chép")
+    fun appTitle(language: AppLanguage) = language.pick("对译", "Duiyi", "対訳", "대역", "Duiyi", "Duiyi")
+    fun welcomeBody(language: AppLanguage) = language.pick("把手机平放在中间，对面就能看懂你说的话。", "Lay the phone between you. The other person will see captions they can read.", "スマホを間に置けば、相手は読める字幕で話を理解できます。", "휴대폰을 가운데 두면, 상대가 읽을 수 있는 자막으로 말을 이해합니다.", "วางโทรศัพท์ตรงกลาง อีกฝ่ายจะเห็นคำบรรยายที่อ่านได้", "Đặt điện thoại ở giữa. Đối phương sẽ thấy phụ đề họ đọc được.")
+    fun getStarted(language: AppLanguage) = language.pick("开始", "Get started", "始める", "시작하기", "เริ่มต้น", "Bắt đầu")
+    fun continueButton(language: AppLanguage) = language.pick("继续", "Continue", "続ける", "계속", "ดำเนินการต่อ", "Tiếp tục")
+    fun allow(language: AppLanguage) = language.pick("允许", "Allow", "許可", "허용", "อนุญาต", "Cho phép")
+    fun languageQuestion(language: AppLanguage) = language.pick("你看哪种语言？", "Which language do you read?", "どの言語を読みますか？", "어떤 언어를 읽나요?", "คุณอ่านภาษาอะไร?", "Bạn đọc ngôn ngữ nào?")
+    fun languageBody(language: AppLanguage) = language.pick("先选你自己看的语言。对方语言可以稍后在面对面里改。", "Pick the language you read. You can change the other person's language later.", "自分が読む言語を先に選びます。相手の言語は後で変えられます。", "내가 읽는 언어를 먼저 고르세요. 상대 언어는 나중에 바꿀 수 있습니다.", "เลือกภาษาที่คุณอ่านก่อน ภาษาอีกฝ่ายเปลี่ยนทีหลังได้", "Chọn ngôn ngữ bạn đọc. Ngôn ngữ đối phương có thể đổi sau.")
+    fun peerCaptionsA11y(language: AppLanguage) = language.pick("给对方看的字幕", "Captions for the other person", "相手向けの字幕", "상대가 보는 자막", "คำบรรยายสำหรับอีกฝ่าย", "Phụ đề cho đối phương")
+    fun userCaptionsA11y(language: AppLanguage) = language.pick("给你看的字幕", "Captions for you", "自分向けの字幕", "내가 보는 자막", "คำบรรยายสำหรับคุณ", "Phụ đề cho bạn")
+    fun permissionTitle(language: AppLanguage) = language.pick("需要麦克风", "Microphone needed", "マイクが必要です", "마이크가 필요합니다", "ต้องการไมโครโฟน", "Cần micro")
+    fun permissionBody(language: AppLanguage) = language.pick("只在本机转写和翻译，用于当面字幕。不会上传你的声音。", "Speech is transcribed and translated on this phone for live captions. Audio is not uploaded.", "音声は端末内だけで文字と訳になります。アップロードしません。", "음성은 이 기기에서만 글자와 번역이 됩니다. 업로드하지 않습니다.", "เสียงถูกถอดและแปลบนเครื่องนี้ ไม่ได้อัปโหลด", "Giọng nói được chuyển chữ và dịch trên máy này. Không tải lên.")
+    fun assetsTitle(language: AppLanguage) = language.pick("准备本机模型", "Prepare on-device models", "端末内モデルを準備", "온디바이스 모델 준비", "เตรียมโมเดลบนเครื่อง", "Chuẩn bị mô hình trên máy")
+    fun assetsBody(language: AppLanguage) = language.pick("对译会下载翻译模型 TranslateGemma 4B（约 2.4 GB）。之后完全离线，句子留在这台手机上。", "Duiyi downloads TranslateGemma 4B (about 2.4 GB). After that, translation stays on this phone.", "TranslateGemma 4B（約 2.4 GB）をダウンロードします。以降は端末内で訳します。", "TranslateGemma 4B(약 2.4GB)를 받습니다. 이후 번역은 이 기기에서 됩니다.", "จะดาวน์โหลด TranslateGemma 4B (ประมาณ 2.4 GB) แล้วแปลบนเครื่องนี้", "Duiyi tải TranslateGemma 4B (khoảng 2.4 GB). Sau đó dịch trên máy này.")
+    fun assetsBodyHonor(language: AppLanguage) = language.pick("荣耀机型会下载听写 SenseVoice（约 240 MB）和翻译 TranslateGemma 4B（约 2.4 GB）。之后对着手机说话即可出字幕，声音和句子都不上传。", "On Honor, Duiyi downloads SenseVoice speech (about 240 MB) and TranslateGemma 4B (about 2.4 GB). Then speak to the phone. Audio and text stay here.", "Honor では SenseVoice（約 240 MB）と TranslateGemma 4B（約 2.4 GB）をダウンロードします。音声は端末内に留まります。", "Honor에서는 SenseVoice(약 240MB)와 TranslateGemma 4B(약 2.4GB)를 받습니다. 이후 기기에서 자막이 나옵니다.", "เครื่อง Honor จะดาวน์โหลด SenseVoice (ประมาณ 240 MB) และ TranslateGemma 4B (ประมาณ 2.4 GB)", "Máy Honor tải SenseVoice (khoảng 240 MB) và TranslateGemma 4B (khoảng 2.4 GB). Nói vào điện thoại là có phụ đề.")
+    fun downloadModels(language: AppLanguage) = language.pick("下载模型", "Download models", "モデルをダウンロード", "모델 다운로드", "ดาวน์โหลดโมเดล", "Tải mô hình")
+    fun enterHome(language: AppLanguage) = language.pick("进入首页", "Go to Home", "ホームへ", "홈으로", "ไปหน้าแรก", "Vào trang chủ")
+    fun retry(language: AppLanguage) = language.pick("重试", "Try again", "再試行", "다시 시도", "ลองอีกครั้ง", "Thử lại")
+    fun modeFaceToFace(language: AppLanguage) = language.pick("面对面", "Face to face", "対面", "마주보기", "ตัวต่อตัว", "Đối diện")
+    fun modeSimultaneous(language: AppLanguage) = language.pick("同声传译", "Simultaneous", "同時通訳", "동시통역", "ล่ามพร้อมกัน", "Phiên dịch song song")
+    fun modeMeeting(language: AppLanguage) = language.pick("会议记录", "Meeting notes", "会議記録", "회의 기록", "บันทึกประชุม", "Ghi chép họp")
+    fun homeFaceToFaceSubtitle(language: AppLanguage) = language.pick("两人隔桌，字幕打到各自一侧", "Two people, captions on each side", "向かい合い、字幕はそれぞれの側に", "마주 앉아 각자 쪽으로 자막", "สองคน ซับไตล์คนละฝั่ง", "Hai người, phụ đề mỗi bên")
+    fun homeSimultaneousSubtitle(language: AppLanguage) = language.pick("听现场，看或听译文", "Hear the room, read or listen to the translation", "現場を聞き、訳を読むか聞く", "현장을 듣고 번역을 보거나 들음", "ฟังสถานที่ ดูหรือฟังคำแปล", "Nghe hiện trường, đọc hoặc nghe bản dịch")
+    fun homeMeetingSubtitle(language: AppLanguage) = language.pick("把一场会记成完整文字稿", "A full transcript of the meeting", "会議を全文に", "회의 전체 기록", "บันทึกประชุมเต็ม", "Bản ghi đầy đủ buổi họp")
+    fun historyTitle(language: AppLanguage) = language.pick("任务历史", "History", "履歴", "기록", "ประวัติ", "Lịch sử")
+    fun historySubtitle(language: AppLanguage) = language.pick("都保存在这台手机上", "Kept on this phone", "この端末に保存されます", "이 기기에 저장됩니다", "เก็บไว้บนเครื่องนี้", "Lưu trên máy này")
+    fun historyEmpty(language: AppLanguage) = language.pick("还没有任务。从首页开一个新任务。", "No tasks yet. Start one from Home.", "まだタスクがありません。ホームから新しいタスクを始めてください。", "아직 작업이 없습니다. 홈에서 새 작업을 시작하세요.", "ยังไม่มีงาน เริ่มงานใหม่จากหน้าแรก", "Chưa có phiên. Hãy bắt đầu từ Trang chủ.")
+    fun homeButton(language: AppLanguage) = language.pick("首页", "Home", "ホーム", "홈", "หน้าแรก", "Trang chủ")
+    fun newTask(language: AppLanguage) = language.pick("新任务", "New task", "新しいタスク", "새 작업", "งานใหม่", "Phiên mới")
+    fun endTask(language: AppLanguage) = language.pick("结束任务", "End task", "タスク終了", "작업 종료", "จบงาน", "Kết thúc")
+    fun taskIdle(language: AppLanguage) = language.pick("没有进行中的任务", "No task in progress", "進行中のタスクはありません", "진행 중인 작업이 없습니다", "ไม่มีงานที่กำลังทำ", "Không có phiên đang chạy")
+    fun taskRunning(language: AppLanguage) = language.pick("进行中", "In progress", "進行中", "진행 중", "กำลังทำ", "Đang chạy")
+    fun needNewTask(language: AppLanguage) = language.pick("先开一个新任务", "Start a new task first", "先に新しいタスクを始めてください", "먼저 새 작업을 시작하세요", "เริ่มงานใหม่ก่อน", "Hãy mở một phiên mới trước")
+    fun endTaskConfirm(language: AppLanguage) = language.pick("结束并保存这条记录？", "End and save this record?", "終了してこの記録を保存しますか？", "종료하고 이 기록을 저장할까요?", "จบและบันทึกรายการนี้?", "Kết thúc và lưu bản ghi này?")
+    fun replaceTaskConfirm(language: AppLanguage) = language.pick("结束当前任务并开始新的？", "End the current task and start a new one?", "現在のタスクを終了して新しく始めますか？", "현재 작업을 종료하고 새로 시작할까요?", "จบงานปัจจุบันแล้วเริ่มใหม่?", "Kết thúc phiên hiện tại và bắt đầu phiên mới?")
+    fun deleteTaskConfirm(language: AppLanguage) = language.pick("删除这条记录？", "Delete this record?", "この記録を削除しますか？", "이 기록을 삭제할까요?", "ลบรายการนี้?", "Xóa bản ghi này?")
+    fun delete(language: AppLanguage) = language.pick("删除", "Delete", "削除", "삭제", "ลบ", "Xóa")
+    fun cancel(language: AppLanguage) = language.pick("取消", "Cancel", "キャンセル", "취소", "ยกเลิก", "Hủy")
+    fun filterAll(language: AppLanguage) = language.pick("全部", "All", "すべて", "전체", "ทั้งหมด", "Tất cả")
+    fun unfinishedTasks(language: AppLanguage) = language.pick("未结束的任务", "Unfinished tasks", "未完了のタスク", "끝나지 않은 작업", "งานที่ยังไม่จบ", "Phiên chưa kết thúc")
+    fun recordTitle(language: AppLanguage) = language.pick("记录", "Record", "記録", "기록", "บันทึก", "Bản ghi")
+    fun exportShare(language: AppLanguage) = language.pick("导出文字稿并分享", "Export transcript and share", "文字起こしを書き出して共有", "기록 내보내기 및 공유", "ส่งออกข้อความแล้วแชร์", "Xuất bản ghi và chia sẻ")
+    fun transcriptSection(language: AppLanguage) = language.pick("文字稿", "Transcript", "文字起こし", "기록", "ข้อความ", "Bản ghi")
+    fun justNow(language: AppLanguage) = language.pick("刚刚", "Just now", "たった今", "방금", "เมื่อกี้", "Vừa xong")
+    fun underOneMinute(language: AppLanguage) = language.pick("不到 1 分钟", "Under 1 min", "1分未満", "1분 미만", "ไม่ถึง 1 นาที", "Dưới 1 phút")
+    fun minutesCount(minutes: Int, language: AppLanguage) = language.pick("$minutes 分钟", "$minutes min", "${minutes}分", "${minutes}분", "$minutes นาที", "$minutes phút")
+    fun theySpeak(language: AppLanguage) = language.pick("他说", "They speak", "相手が話す", "상대가 말함", "อีกฝ่ายพูด", "Họ nói")
+    fun iListen(language: AppLanguage) = language.pick("我听", "I listen", "自分が聞く", "내가 들음", "ฉันฟัง", "Tôi nghe")
+    fun swapDirection(language: AppLanguage) = language.pick("对调方向", "Swap direction", "方向を入れ替え", "방향 바꾸기", "สลับทิศทาง", "Đổi chiều")
+    fun voiceOut(language: AppLanguage) = language.pick("读出译文", "Speak translation", "訳を読み上げ", "번역 읽어주기", "อ่านคำแปล", "Đọc bản dịch")
+    fun voiceOutSpeaking(language: AppLanguage) = language.pick("正在读出", "Speaking out", "読み上げ中", "읽는 중", "กำลังอ่าน", "Đang đọc")
+    fun voiceOutMicHint(language: AppLanguage) = language.pick("戴上耳机后点「读出译文」。现场声音用手机麦克风收，译文只在耳机里播放。", "Wear headphones, then tap Speak translation. The microphone hears the room; playback stays in your headphones.", "イヤホンをつけてから読み上げ。現場の声はマイク、訳はイヤホンだけ。", "이어폰을 끼고 번역 읽어주기. 현장은 마이크, 번역은 이어폰.", "ใส่หูฟังแล้วแตะอ่านคำแปล ไมค์ฟังห้อง คำแปลดังในหูฟัง", "Đeo tai nghe rồi bật Đọc bản dịch. Micro nghe hiện trường; bản dịch chỉ trong tai nghe.")
+    fun showSourceLine(language: AppLanguage) = language.pick("显示原文", "Show source", "原文を表示", "원문 표시", "แสดงต้นฉบับ", "Hiện bản gốc")
+    fun interpretationIdle(language: AppLanguage) = language.pick("开始听现场说话。", "Start listening to the room.", "現場の話を聞き始めます。", "현장의 말을 듣기 시작하세요.", "เริ่มฟังเสียงในสถานที่", "Bắt đầu nghe tiếng tại chỗ.")
+    fun meetingTooLong(language: AppLanguage) = language.pick("这篇已经很长。请结束并新开一条任务。", "This transcript is long. End it and start a new task.", "全文が長くなりました。終了して新しいタスクを始めてください。", "기록이 너무 깁니다. 종료하고 새 작업을 시작하세요.", "ต้นฉบับยาวแล้ว จบแล้วเริ่มงานใหม่", "Bản ghi đã dài. Hãy kết thúc và mở phiên mới.")
+    fun languageUnavailable(language: AppLanguage) = language.pick("这台手机还没有这个语言模型", "This phone does not have this language model yet", "この端末には、この言語モデルがまだありません", "이 기기에는 아직 이 언어 모델이 없습니다", "เครื่องนี้ยังไม่มีโมเดลภาษานี้", "Máy này chưa có mô hình ngôn ngữ này")
+    fun summaryDeviceNotEligible(language: AppLanguage) = language.pick("这台手机不能在本机生成摘要。可以把文字稿导出，用其他工具总结。", "This phone cannot generate an on-device summary. Export the transcript and use another tool.", "この端末では要約を作れません。文字起こしを書き出してください。", "이 기기에서는 요약을 만들 수 없습니다. 기록을 내보내세요.", "เครื่องนี้สรุปบนเครื่องไม่ได้ ส่งออกข้อความแล้วใช้เครื่องมืออื่น", "Máy này không tạo tóm tắt trên máy. Hãy xuất bản ghi.")
+    fun nanoGenerated(language: AppLanguage) = language.pick("摘要由 Gemini Nano 在本机生成。", "Summary generated on-device by Gemini Nano.", "要約は Gemini Nano が端末内で生成しました。", "요약은 Gemini Nano가 기기에서 만들었습니다.", "สรุปสร้างบนเครื่องโดย Gemini Nano", "Tóm tắt do Gemini Nano tạo trên máy.")
+    fun summaryModelNotReady(language: AppLanguage) = language.pick("本机摘要模型还在准备，请稍后再试。现在可以先导出文字稿。", "The on-device summary model is still preparing. Try again later. You can export now.", "要約モデルを準備中です。文字起こしは今すぐ書き出せます。", "온디바이스 요약 모델이 아직 준비 중입니다. 기록은 지금 내보낼 수 있습니다.", "โมเดลสรุปยังไม่พร้อม ส่งออกข้อความได้ตอนนี้", "Mô hình tóm tắt chưa sẵn. Có thể xuất bản ghi ngay.")
+    fun summaryUnavailable(language: AppLanguage) = language.pick("现在无法在本机生成摘要，请导出后用其他工具。", "A summary cannot be generated on this phone right now. Export and use another tool.", "現在この端末では要約を作れません。", "지금은 이 기기에서 요약을 만들 수 없습니다.", "ตอนนี้สรุปบนเครื่องไม่ได้", "Hiện không tạo được tóm tắt trên máy.")
+    fun capabilitySpeechOnDevice(language: AppLanguage) = language.pick("听写：端侧识别", "Speech: on-device", "音声：端末内", "음성: 온디바이스", "เสียง: บนเครื่อง", "Giọng nói: trên máy")
+    fun capabilitySpeechSystem(language: AppLanguage) = language.pick(
+        "听写：Google 语音（荣耀默认引擎对第三方常无字幕；须给 Google 应用麦克风权限）",
+        "Speech: Google recognizer (Honor's default engine often returns nothing; Google app needs microphone)",
+        "音声：Google 認識",
+        "음성: Google 인식",
+        "เสียง: Google",
+        "Giọng nói: Google",
+    )
+    fun capabilitySpeechNone(language: AppLanguage) = language.pick("这台手机还不能离线听写。", "This phone cannot do on-device speech yet.", "この端末ではオフライン音声認識ができません。", "이 기기는 아직 온디바이스 음성을 할 수 없습니다.", "เครื่องนี้ยังถอดเสียงออฟไลน์ไม่ได้", "Máy này chưa nhận giọng nói ngoại tuyến.")
+    fun noGmsHint(language: AppLanguage) = language.pick("未检测到 Google Play 服务。非荣耀机型的听写可能需要 Google 应用。翻译已改为本机 TranslateGemma，不依赖 GMS。", "Google Play services not found. Non-Honor dictation may need the Google app. Translation uses on-device TranslateGemma and does not need GMS.", "Google Play サービスが見つかりません。翻訳は端末内の TranslateGemma です。", "Google Play 서비스가 없습니다. 번역은 기기의 TranslateGemma입니다.", "ไม่พบบริการ Google Play การแปลใช้ TranslateGemma บนเครื่อง", "Không thấy Google Play services. Bản dịch dùng TranslateGemma trên máy.")
+    fun capabilityTranslationOnDevice(language: AppLanguage) = language.pick("翻译：TranslateGemma 4B 本机", "Translation: TranslateGemma 4B on-device", "翻訳：TranslateGemma 4B 端末内", "번역: TranslateGemma 4B 온디바이스", "แปล: TranslateGemma 4B บนเครื่อง", "Dịch: TranslateGemma 4B trên máy")
+    fun capabilityTranslationMissing(language: AppLanguage) = language.pick("翻译模型未下载。打开「模型和资源包」下载 TranslateGemma 4B（约 2.4 GB）。", "Translation model not downloaded. Open Models & packs and download TranslateGemma 4B (about 2.4 GB).", "翻訳モデルが未ダウンロードです。", "번역 모델이 없습니다.", "ยังไม่ได้ดาวน์โหลดโมเดลแปล", "Chưa tải mô hình dịch.")
+    fun takeTurns(language: AppLanguage) = language.pick("两人请轮流说；同时开口时字幕可能跟错。", "Please take turns. Overlapping speech may land on the wrong side.", "交互に話してください。同時に話すと字幕がずれることがあります。", "번갈아 말하세요. 동시에 말하면 자막이 엇갈릴 수 있습니다.", "พูดทีละคน พูดพร้อมกันซับอาจผิดฝั่ง", "Hãy nói lần lượt. Nói chồng nhau có thể lệch phía.")
+    fun speechEngineSettings(language: AppLanguage) = language.pick("去系统设置下载离线语音识别", "Download offline speech in system settings", "設定でオフライン音声認識をダウンロード", "설정에서 오프라인 음성 인식 받기", "ไปตั้งค่าระบบเพื่อดาวน์โหลดการรู้จำเสียงออฟไลน์", "Tải nhận dạng giọng nói ngoại tuyến trong cài đặt")
+    fun back(language: AppLanguage) = language.pick("返回", "Back", "戻る", "뒤로", "กลับ", "Quay lại")
+    fun modelsTitle(language: AppLanguage) = language.pick("模型和资源包", "Models & packs", "モデルとパック", "모델과 팩", "โมเดลและชุด", "Mô hình và gói")
+    fun modelsSubtitle(language: AppLanguage) = language.pick("查看听写模型和翻译模型，管理下载与占用空间。", "See speech and translation models, and manage downloads.", "音声モデルと翻訳モデルを確認し、ダウンロードを管理します。", "음성 모델과 번역 모델을 보고 다운로드를 관리합니다.", "ดูโมเดลเสียงและแปล จัดการดาวน์โหลด", "Xem mô hình nghe và dịch, quản lý tải.")
+    fun speechSection(language: AppLanguage) = language.pick("听写模型", "Speech model", "音声モデル", "음성 모델", "โมเดลถอดเสียง", "Mô hình nghe")
+    fun translationSection(language: AppLanguage) = language.pick("翻译模型", "Translation model", "翻訳モデル", "번역 모델", "โมเดลแปล", "Mô hình dịch")
+    fun speechModelTitle(language: AppLanguage) = language.pick("SenseVoice 离线听写", "SenseVoice on-device speech", "SenseVoice オフライン音声", "SenseVoice 온디바이스 음성", "SenseVoice ถอดเสียงบนเครื่อง", "SenseVoice nghe trên máy")
+    fun speechModelBody(language: AppLanguage) = language.pick("荣耀面对面、同传、会议用的端侧模型，配合语音活动检测，约 1 秒更新字幕。覆盖中英日韩粤。约 240 MB。", "On-device model for Honor face-to-face, simultaneous, and meeting, with voice-activity detection and about 1s caption updates. Chinese, English, Japanese, Korean, Cantonese. About 240 MB.", "Honor の対面・同時通訳・会議用。VAD で約 1 秒ごとに字幕。中英日韓粤。約 240 MB。", "Honor 마주보기·동시통역·회의용. VAD로 약 1초마다 자막. 중·영·일·한. 약 240MB.", "สำหรับ Honor ตัวต่อตัว ล่าม ประชุม อัปเดตประมาณ 1 วินาที ประมาณ 240 MB", "Cho Honor đối diện, phiên dịch, họp. Cập nhật khoảng 1 giây. Khoảng 240 MB.")
+    fun translationModelTitle(language: AppLanguage) = language.pick("TranslateGemma 4B", "TranslateGemma 4B", "TranslateGemma 4B", "TranslateGemma 4B", "TranslateGemma 4B", "TranslateGemma 4B")
+    fun translationModelBody(language: AppLanguage) = language.pick("本机翻译，覆盖应用内全部语言。量化 Q4，约 2.4 GB。翻译时带上一句原文作上下文。", "On-device translation for every language in the app. Q4, about 2.4 GB. Uses the previous source sentence as context.", "アプリ内の全言語を端末内で翻訳。Q4、約 2.4 GB。直前の原文を文脈に使います。", "앱의 모든 언어를 기기에서 번역. Q4, 약 2.4GB. 바로 앞 원문을 맥락으로 씁니다.", "แปลบนเครื่องทุกภาษาในแอป Q4 ประมาณ 2.4 GB ใช้ประโยคต้นฉบับก่อนหน้าเป็นบริบท", "Dịch trên máy cho mọi ngôn ngữ trong app. Q4, khoảng 2.4 GB. Dùng câu gốc trước đó làm ngữ cảnh.")
+    fun assetReady(language: AppLanguage) = language.pick("已下载", "Downloaded", "ダウンロード済み", "다운로드됨", "ดาวน์โหลดแล้ว", "Đã tải")
+    fun assetPartial(language: AppLanguage) = language.pick("未完成", "Incomplete", "未完了", "미완료", "ยังไม่ครบ", "Chưa xong")
+    fun assetMissing(language: AppLanguage) = language.pick("未下载", "Not downloaded", "未ダウンロード", "없음", "ยังไม่ดาวน์โหลด", "Chưa tải")
+    fun assetDownloading(language: AppLanguage) = language.pick("正在下载…", "Downloading…", "ダウンロード中…", "다운로드 중…", "กำลังดาวน์โหลด…", "Đang tải…")
+    fun assetFailed(language: AppLanguage) = language.pick("下载失败，请重试", "Download failed. Try again.", "失敗しました。再試行してください。", "실패했습니다. 다시 시도하세요.", "ดาวน์โหลดไม่สำเร็จ ลองอีกครั้ง", "Tải thất bại. Thử lại.")
+    fun downloadAsset(language: AppLanguage) = language.pick("下载", "Download", "ダウンロード", "다운로드", "ดาวน์โหลด", "Tải")
+    fun deleteAsset(language: AppLanguage) = language.pick("删除", "Delete", "削除", "삭제", "ลบ", "Xóa")
+    fun downloadMissing(language: AppLanguage) = language.pick("下载缺少的", "Download missing", "不足分をダウンロード", "없는 항목 받기", "ดาวน์โหลดที่ยังไม่มี", "Tải phần còn thiếu")
+    fun confirmDeleteAsset(language: AppLanguage) = language.pick("删除后需重新下载才能离线使用。", "You will need to download it again to use it offline.", "削除すると、オフライン利用には再ダウンロードが必要です。", "삭제하면 오프라인으로 쓰려면 다시 받아야 합니다.", "ลบแล้วต้องดาวน์โหลดใหม่ถึงใช้ออฟไลน์ได้", "Xóa xong phải tải lại mới dùng ngoại tuyến được.")
+    fun translationPackBody(pack: AppLanguage, ui: AppLanguage) = translationModelBody(ui)
+    fun speechPartTitle(fileName: String, language: AppLanguage): String = when {
+        fileName.contains("model") && fileName.endsWith(".onnx") ->
+            language.pick("听写模型", "Speech model", "音声モデル", "음성 모델", "โมเดลถอดเสียง", "Mô hình nghe")
+        fileName.contains("silero") || fileName.contains("vad") ->
+            language.pick("语音活动检测", "Voice activity", "音声区間検出", "음성 구간 검출", "ตรวจจับช่วงพูด", "Phát hiện đoạn nói")
+        fileName.startsWith("tokens") -> language.pick("词表", "Tokens", "トークン", "토큰", "โทเคน", "Từ vựng")
+        fileName.endsWith(".gguf") -> language.pick("翻译模型", "Translation model", "翻訳モデル", "번역 모델", "โมเดลแปล", "Mô hình dịch")
+        else -> fileName
+    }
+    fun bytesSize(bytes: Long, language: AppLanguage): String {
+        if (bytes <= 0L) return ""
+        val gb = bytes / (1024.0 * 1024.0 * 1024.0)
+        if (gb >= 1.0) return "%.2f GB".format(gb)
+        val mb = bytes / (1024.0 * 1024.0)
+        return if (mb >= 1) "%.1f MB".format(mb) else "%.0f KB".format((bytes / 1024.0).coerceAtLeast(1.0))
+    }
+    fun percent(progress: Float, language: AppLanguage): String {
+        val value = (progress * 100).toInt().coerceIn(0, 100)
+        return "$value%"
+    }
+    fun featureTitle(feature: FeatureID, language: AppLanguage) = when (feature) {
+        FeatureID.FaceToFace -> modeFaceToFace(language)
+        FeatureID.Simultaneous -> modeSimultaneous(language)
+        FeatureID.Meeting -> modeMeeting(language)
+    }
+    fun summaryAvailabilityMessage(availability: SummaryAvailability, language: AppLanguage) = when (availability) {
+        SummaryAvailability.Available -> nanoGenerated(language)
+        SummaryAvailability.DeviceNotEligible -> summaryDeviceNotEligible(language)
+        SummaryAvailability.ModelNotReady -> summaryModelNotReady(language)
+        SummaryAvailability.Unavailable -> summaryUnavailable(language)
+    }
+}
+
+object TaskFormatting {
+    fun durationText(seconds: Long, language: AppLanguage): String {
+        if (seconds < 60) return Copy.underOneMinute(language)
+        return Copy.minutesCount((seconds / 60).toInt(), language)
+    }
+}

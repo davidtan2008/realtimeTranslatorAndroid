@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>对译 Duiyi · Android 原型</title>
+  <style>
+    :root {
+      --paper: #f6f3ee; --ink: #1c1915; --muted: #6b645c; --line: #e2dbd2;
+      --bg: #12141a; --pane: #161920; --text: #f4efe6;
+      --dim: rgba(244, 239, 230, 0.58); --gold: #e8b86d; --en: #7ec8c3;
+      --meet: #c49be8; --danger: #e07070; --card: #fffdf9;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--paper); color: var(--ink); }
+    body { font-family: "Roboto", "PingFang SC", sans-serif; line-height: 1.5; }
+    header.top {
+      position: sticky; top: 0; z-index: 20;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      padding: 14px 28px; background: rgba(246, 243, 238, 0.92);
+      backdrop-filter: blur(16px); border-bottom: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: baseline; gap: 10px; }
+    .brand strong { font-size: 18px; letter-spacing: 0.04em; }
+    .brand span { color: var(--muted); font-size: 13px; }
+    nav { display: flex; gap: 6px; flex-wrap: wrap; }
+    nav a { color: var(--muted); text-decoration: none; font-size: 13px; padding: 6px 10px; border-radius: 999px; }
+    nav a.now { background: var(--ink); color: var(--paper); }
+    main { max-width: 1180px; margin: 0 auto; padding: 36px 24px 80px; }
+    h1 { font-size: 40px; letter-spacing: -0.03em; margin: 0 0 8px; font-weight: 640; }
+    .lede { font-size: 18px; color: var(--muted); max-width: 720px; margin: 0 0 28px; }
+    h2 { font-size: 22px; margin: 0 0 8px; }
+    p.note { color: var(--muted); margin: 0 0 20px; max-width: 640px; }
+    section { margin-bottom: 72px; }
+    .hero-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 28px; }
+    @media (max-width: 900px) { .hero-grid, .phones, .weeks { grid-template-columns: 1fr !important; } }
+    .scene { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 28px; }
+    .phone {
+      width: 300px; height: 620px; margin: 0 auto; background: var(--bg);
+      border-radius: 28px 28px 20px 20px; padding: 10px 10px 16px;
+      box-shadow: 0 18px 50px rgba(28, 25, 21, 0.18); color: var(--text);
+      display: flex; flex-direction: column;
+    }
+    .status { display: flex; justify-content: space-between; font-size: 12px; color: var(--dim); padding: 4px 10px 8px; }
+    .screen { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    .navrow { display: flex; align-items: center; justify-content: space-between; padding: 0 8px 10px; font-size: 15px; font-weight: 600; }
+    .navrow button, .textbtn { background: none; border: 0; color: var(--gold); font-size: 13px; font-weight: 600; cursor: pointer; padding: 4px 0; }
+    .textbtn.danger { color: var(--danger); }
+    .textbtn:disabled { color: var(--dim); cursor: default; }
+    .cards { display: flex; flex-direction: column; gap: 10px; padding: 4px; }
+    .mod { text-align: left; border: 0; border-radius: 16px; padding: 16px; cursor: pointer; color: var(--text); }
+    .mod.f2f { background: #1a1714; } .mod.si { background: #161920; } .mod.meet { background: #1c1824; }
+    .mod small { display: block; color: var(--dim); font-size: 12px; margin-top: 4px; }
+    .taskbar { display: flex; justify-content: space-between; align-items: center; padding: 0 8px 10px; }
+    .caps { font-size: 12px; color: var(--dim); } .caps.on { color: var(--gold); }
+    .pane { flex: 1; background: var(--pane); border-radius: 14px; padding: 12px 14px; overflow: auto; font-size: 15px; }
+    .pane.peer { background: #1a1714; transform: rotate(180deg); }
+    .live { font-size: 20px; font-weight: 560; margin-bottom: 10px; }
+    .hist { color: var(--dim); font-size: 13px; margin: 0 0 8px; }
+    .mid { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 0 4px; }
+    .mic { width: 64px; height: 64px; border-radius: 50%; background: var(--gold); color: #1c1915; border: 0; font-weight: 700; cursor: pointer; }
+    .mic.off { background: #2a2e38; color: var(--dim); }
+    .mic:disabled { opacity: 0.4; cursor: default; }
+    .row { display: flex; justify-content: space-between; padding: 12px 8px; border-bottom: 1px solid #2a2e38; cursor: pointer; width: 100%; background: none; border-left: 0; border-right: 0; border-top: 0; color: var(--text); text-align: left; }
+    .row small { color: var(--dim); font-size: 12px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+    .banner { margin: 0 4px 10px; padding: 10px 12px; border-radius: 12px; background: #2a2420; color: #f0d9b0; font-size: 13px; }
+    .banner.ok { background: #1d2a24; color: #b8e0c8; }
+    .share { width: calc(100% - 8px); margin: 8px 4px 0; padding: 12px; border: 0; border-radius: 12px; background: var(--gold); color: #1c1915; font-weight: 700; cursor: pointer; }
+    .phones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .cap { text-align: center; font-size: 13px; color: var(--muted); margin-top: 10px; }
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .tabs button { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 12px; cursor: pointer; color: var(--muted); }
+    .tabs button.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    .weeks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .week { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+    .week strong { display: block; margin-bottom: 6px; }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 999px; font-size: 13px; display: none; }
+    .nav-hint { height: 18px; display: flex; justify-content: center; align-items: flex-end; }
+    .nav-hint span { width: 120px; height: 4px; background: #3a3f4c; border-radius: 999px; }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><strong>对译</strong><span>Android 原型 · Compose · 端侧听写</span></div>
+    <nav>
+      <a class="now" href="platform.html">原型</a>
+      <a href="../docs/01-product-prototype.md">原型文档</a>
+      <a href="../docs/02-architecture.md">架构</a>
+      <a href="../docs/03-tech-choices.md">选型</a>
+      <a href="../docs/07-roadmap.md">路线图</a>
+    </nav>
+  </header>
+  <main>
+    <section>
+      <h1>同一套平台，跑在 Android 14+</h1>
+      <p class="lede">产品规则与 iOS 对译对齐。听写走端侧 SpeechRecognizer，翻译走 ML Kit，总结仅在 Gemini Nano 可用时生成。无 GMS / 无端侧识别的设备停在引导，不静默改云。</p>
+      <div class="hero-grid">
+        <div class="scene">
+          <h2>可点的手机</h2>
+          <p class="note">无任务时不能听。新任务 → 开始 → 结束，才会出现在历史里。系统返回从模块回首页。</p>
+          <div class="tabs" id="tabs"></div>
+          <div class="phone" id="phone"></div>
+        </div>
+        <div>
+          <div class="scene" style="margin-bottom:16px">
+            <h2>相对 iPhone 要说的实话</h2>
+            <p class="note" style="margin-bottom:0">面对面是单引擎多语种切换，不是双路并行。请轮流说。泰 / 越听写视机型灰掉。绝大多数机器没有本机摘要，导出永远可用。</p>
+          </div>
+          <div class="scene">
+            <h2>不合格设备</h2>
+            <p class="note" style="margin-bottom:0">`isOnDeviceRecognitionAvailable == false` 时引导页写「这台手机还不能离线听写」，不要进倒字板空转。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section>
+      <h2>三块主界面</h2>
+      <p class="note">色板、任务条、金色中间钮与 iOS 相同。差异只在字幕怎么排。</p>
+      <div class="phones">
+        <div><div class="phone" id="p-f2f"></div><div class="cap">面对面 · 倒字</div></div>
+        <div><div class="phone" id="p-si"></div><div class="cap">同声传译 · 单栏</div></div>
+        <div><div class="phone" id="p-meet"></div><div class="cap">会议记录 · 全文稿</div></div>
+      </div>
+    </section>
+    <section>
+      <h2>八周落地</h2>
+      <div class="weeks">
+        <div class="week"><strong>M1 壳</strong>能力探测、引导、首页卡片。</div>
+        <div class="week"><strong>M2 竖切</strong>端侧听写 + ML Kit + 倒字路由。</div>
+        <div class="week"><strong>M3–4 平台</strong>任务历史、同传读出、会议。</div>
+        <div class="week"><strong>M5 诚实</strong>Nano 三态 + 系统分享。</div>
+      </div>
+    </section>
+  </main>
+  <div class="toast" id="toast"></div>
+  <script>
+    const PLATFORM = {
+      historyHint: "都保存在这台 Android 手机上",
+      ineligible: "这台手机不能在本机生成摘要。可以把文字稿导出，用其他工具总结。",
+      capable: "摘要由 Gemini Nano 在本机生成。",
+      share: "将打开系统分享面板"
+    };
+    const state = { screen: "home", task: null, listening: false, history: [
+      { id: 1, kind: "si", title: "同声传译 · 英语 → 中文", meta: "今天 10:18 · 26 分钟" },
+      { id: 2, kind: "f2f", title: "面对面 · 中文 ↔ 英语", meta: "昨天 19:02 · 12 分钟" }
+    ]};
+    function toast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg; el.style.display = "block";
+      clearTimeout(toast._t); toast._t = setTimeout(() => { el.style.display = "none"; }, 2200);
+    }
+    function chrome(title, extra = "") {
+      return `<div class="status"><span>9:41</span><span>对译</span></div>
+        <div class="navrow">
+          <button type="button" onclick="go('home')">首页</button>
+          <span>${title}</span>
+          <button type="button" onclick="go('history')">历史</button>
+        </div>${extra}`;
+    }
+    function taskBar(kind) {
+      const running = state.task === kind;
+      return `<div class="taskbar">
+          <span class="caps ${running ? "on" : ""}">${running ? "进行中 · 刚刚" : "没有进行中的任务"}</span>
+          <div>
+            <button class="textbtn" type="button" onclick="newTask('${kind}')">新任务</button>
+            <button class="textbtn danger" type="button" ${running ? "" : "disabled"} onclick="endTask()">结束任务</button>
+          </div>
+        </div>`;
+    }
+    function screens() {
+      return {
+        home: `${chrome("对译")}<div class="cards">
+            <button class="mod f2f" type="button" onclick="go('f2f')"><b>面对面</b><small>两人隔桌，字幕打到各自一侧</small></button>
+            <button class="mod si" type="button" onclick="go('si')"><b>同声传译</b><small>听现场，看或听译文</small></button>
+            <button class="mod meet" type="button" onclick="go('meet')"><b>会议记录</b><small>把一场会记成完整文字稿</small></button>
+            <button class="mod si" type="button" onclick="go('history')" style="background:#23262f"><b>任务历史</b><small>${PLATFORM.historyHint}</small></button>
+          </div><div class="nav-hint"><span></span></div>`,
+        f2f: `${chrome("面对面")}${taskBar("f2f")}
+          <div class="pane peer">Could we meet at six?</div>
+          <div class="mid">
+            <button class="mic ${state.listening ? "" : "off"}" ${state.task === "f2f" ? "" : "disabled"} onclick="toggleListen()">听</button>
+            <span class="caps">${state.task === "f2f" ? (state.listening ? "聆听中" : "已暂停") : "先开一个新任务"}</span>
+          </div>
+          <div class="pane"><div class="live">我们六点见，可以吗？</div><div class="hist">好的，车站见。</div></div>
+          <div class="nav-hint"><span></span></div>`,
+        si: `${chrome("同声传译")}${taskBar("si")}
+          <div class="pane">
+            <div class="live">好吧，我同意在车站等大家，然后我们都会在电影前去一家咖啡馆。</div>
+            <div class="hist">太好了。</div>
+          </div>
+          <div class="mid">
+            <button class="mic ${state.listening ? "" : "off"}" ${state.task === "si" ? "" : "disabled"} onclick="toggleListen()">听</button>
+            <span class="caps">${state.task === "si" ? (state.listening ? "正在听现场" : "点按开始") : "先开一个新任务"}</span>
+          </div>
+          <div class="nav-hint"><span></span></div>`,
+        meet: `${chrome("会议记录")}${taskBar("meet")}
+          <div class="pane">
+            <div class="live">接下来把预算确认一下，本周内发给设计组。</div>
+            <p class="hist">大家同意六点在车站集合。</p>
+          </div>
+          <div class="mid">
+            <button class="mic ${state.listening ? "" : "off"}" ${state.task === "meet" ? "" : "disabled"} onclick="toggleListen()">记</button>
+            <span class="caps">${state.task === "meet" ? (state.listening ? "记录中" : "已暂停") : "先开一个新任务"}</span>
+          </div>
+          <div class="nav-hint"><span></span></div>`,
+        history: `${chrome("任务历史")}
+          ${state.history.map((item) => `<button class="row" type="button" onclick="go('detail')">
+              <span><span class="dot" style="background:${item.kind === "si" ? "var(--en)" : item.kind === "meet" ? "var(--meet)" : "var(--gold)"}"></span>${item.title}<br><small>${item.meta}</small></span>
+            </button>`).join("")}
+          <div class="nav-hint"><span></span></div>`,
+        detail: `${chrome("记录")}<div class="banner">${PLATFORM.ineligible}</div>
+          <div class="pane"><div class="live">同声传译 · 英语 → 中文</div><div class="hist">好吧，我同意在车站等大家…</div></div>
+          <button class="share" type="button" onclick="toast(PLATFORM.share)">导出文字稿并分享</button>
+          <div class="nav-hint"><span></span></div>`,
+        capable: `${chrome("记录")}<div class="banner ok">${PLATFORM.capable}</div>
+          <div class="pane"><div class="live">两人约周五看电影，六点车站集合，先去咖啡馆。</div></div>
+          <button class="share" type="button" onclick="toast(PLATFORM.share)">导出并分享</button>
+          <div class="nav-hint"><span></span></div>`
+      };
+    }
+    function renderPhone() { document.getElementById("phone").innerHTML = `<div class="screen">${screens()[state.screen]}</div>`; }
+    function go(name) { state.screen = name; if (name === "home") state.listening = false; renderPhone();
+      document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.screen === name)); }
+    function newTask(kind) { state.task = kind; state.listening = false; toast("已开始新任务。再点中间按钮开始听。"); renderPhone(); }
+    function endTask() {
+      if (!state.task) return;
+      const labels = { f2f: "面对面 · 中文 ↔ 英语", si: "同声传译 · 英语 → 中文", meet: "会议 · 中文" };
+      state.history.unshift({ id: Date.now(), kind: state.task, title: labels[state.task], meta: "刚刚 · 已保存到本机" });
+      state.task = null; state.listening = false; toast("任务已结束，已写入历史。"); go("history");
+    }
+    function toggleListen() { if (!state.task) return; state.listening = !state.listening; renderPhone(); }
+    document.getElementById("tabs").innerHTML = [["home","首页"],["f2f","面对面"],["si","同传"],["meet","会议"],["history","历史"],["detail","无 Nano"],["capable","Nano 总结"]]
+      .map(([id, label]) => `<button type="button" data-screen="${id}" onclick="go('${id}')">${label}</button>`).join("");
+    function staticPhone(html) { return `<div class="status"><span>9:41</span><span>对译</span></div><div class="screen">${html}<div class="nav-hint"><span></span></div></div>`; }
+    document.getElementById("p-f2f").innerHTML = staticPhone(`<div class="navrow"><span></span><span>面对面</span><span style="color:var(--gold);font-size:13px">历史</span></div>
+      <div class="taskbar"><span class="caps on">进行中</span><span class="textbtn danger">结束任务</span></div>
+      <div class="pane peer">See you at six.</div><div class="mid"><button class="mic" type="button">听</button></div>
+      <div class="pane"><div class="live">六点见。</div></div>`);
+    document.getElementById("p-si").innerHTML = staticPhone(`<div class="navrow"><span></span><span>同声传译</span><span style="color:var(--gold);font-size:13px">历史</span></div>
+      <div class="taskbar"><span class="caps on">进行中</span><span class="textbtn danger">结束任务</span></div>
+      <div class="pane"><div class="live">那么，待会儿见。</div></div><div class="mid"><button class="mic" type="button">听</button></div>`);
+    document.getElementById("p-meet").innerHTML = staticPhone(`<div class="navrow"><span></span><span>会议记录</span><span style="color:var(--gold);font-size:13px">历史</span></div>
+      <div class="taskbar"><span class="caps on">进行中 · 42 分钟</span><span class="textbtn danger">结束任务</span></div>
+      <div class="pane"><div class="live">本周内把预算发给设计组。</div></div><div class="mid"><button class="mic" type="button">记</button></div>`);
+    go("home");
+  </script>
+</body>
+</html>
