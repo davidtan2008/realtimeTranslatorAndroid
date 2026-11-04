@@ -17,6 +17,18 @@ object TranslationPolicy {
         return last in terminals
     }
 
+    /**
+     * Index just past the last clause-ending punctuation, or -1 when there is none.
+     * A translation chunk must not be cut anywhere else: a fragment with no boundary
+     * has no guarantee of being a translatable unit.
+     */
+    fun lastClauseBoundary(text: String): Int {
+        for (index in text.indices.reversed()) {
+            if (text[index] in terminals) return index + 1
+        }
+        return -1
+    }
+
     fun isWorthTranslating(text: String, language: AppLanguage): Boolean = when (language) {
         AppLanguage.ZhHans -> hanCount(text) >= 4
         AppLanguage.English -> latinWords(text) >= 3 || letterCount(text) >= 12

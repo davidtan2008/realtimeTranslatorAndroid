@@ -6,6 +6,10 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+// See app/src/main/cpp/CMakeLists.txt. Changing this value makes AGP re-run CMake, so the
+// two builds are directly comparable from the self-test's gen_ms numbers.
+val duiyiArmArch = (project.findProperty("duiyiArmArch") as String?) ?: "armv8.2-a+dotprod"
+
 android {
     namespace = "com.duiyi.android"
     compileSdk = 35
@@ -33,7 +37,7 @@ android {
                     "-DLLAMA_BUILD_SERVER=OFF",
                     "-DGGML_OPENCL=OFF",
                     "-DGGML_HEXAGON=OFF",
-                    "-DGGML_CPU_ARM_ARCH=armv8.2-a+dotprod",
+                    "-DGGML_CPU_ARM_ARCH=$duiyiArmArch",
                     "-DBUILD_SHARED_LIBS=OFF",
                 )
             }

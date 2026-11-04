@@ -101,6 +101,16 @@ fun InterpretationScreen(
             color = if (state.showsSourceLine) Tokens.listen else Tokens.textSecondary,
             modifier = Modifier.clickable { viewModel.setShowsSource(!state.showsSourceLine) },
         )
+        Text(
+            if (state.incrementalTranslation) {
+                Copy.incrementalOn(language)
+            } else {
+                Copy.incrementalOff(language)
+            },
+            color = if (state.incrementalTranslation) Tokens.listen else Tokens.textSecondary,
+            modifier = Modifier.clickable { viewModel.setIncremental(!state.incrementalTranslation) },
+        )
+        Text(Copy.incrementalHint(language), color = Tokens.textSecondary)
         Text(Copy.summarize(language), color = Tokens.listen, modifier = Modifier.clickable(onClick = viewModel::requestSummary))
         ModelsManagerEntry(language) {
             viewModel.openSettings(false)

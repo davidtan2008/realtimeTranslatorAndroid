@@ -265,6 +265,8 @@ SenseVoice 仍可能跑在未绑定的线程上。大核被 Gemma 占满时，�
 
 ## 四、场景简化之后，还有没有速度空间
 
+> 这一节的结论**仍然成立**，但它只讨论 Gemma 这一侧。完整的端到端延迟归因（VAD 端点、SenseVoice 解码、joiner 缓冲、并发抢核）、两个实测缺陷、以及增量分段翻译的设计，见 [`10-latency-optimization.md`](10-latency-optimization.md)。
+
 前提按你的简化：
 
 - 面对面：一人中文、一人英文（仍是双向翻译）

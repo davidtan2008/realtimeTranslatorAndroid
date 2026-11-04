@@ -35,6 +35,11 @@
             android:label="Duiyi Translate Self Test"
             android:theme="@style/Theme.Duiyi" />
         <activity
+            android:name=".debug.LatencyDebugActivity"
+            android:exported="true"
+            android:label="Duiyi Latency"
+            android:theme="@style/Theme.Duiyi" />
+        <activity
             android:name=".app.MainActivity"
             android:exported="true"
             android:launchMode="singleTop"

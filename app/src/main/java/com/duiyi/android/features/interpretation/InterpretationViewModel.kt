@@ -33,6 +33,9 @@ import com.duiyi.android.domain.TranslationJob
 import com.duiyi.android.domain.TranslationPolicy
 import com.duiyi.android.domain.Utterance
 import com.duiyi.android.domain.routing.ClauseSplitter
+import com.duiyi.android.domain.routing.StablePrefixTracker
+import com.duiyi.android.services.ComputeGate
+import com.duiyi.android.services.LatencyProbe
 import com.duiyi.android.services.speech.SpeechEngineException
 import com.duiyi.android.services.speech.SpeechIntentBridge
 import com.duiyi.android.services.translation.TranslationPump
@@ -61,6 +64,7 @@ data class InterpretationUiState(
     val error: DuiyiError? = null,
     val voiceOutEnabled: Boolean = false,
     val showsSourceLine: Boolean = true,
+    val incrementalTranslation: Boolean = false,
     val canSpeakWithoutEcho: Boolean = false,
     val voiceOutBlocked: String? = null,
     val speakingOut: Boolean = false,
@@ -85,6 +89,8 @@ class InterpretationViewModel @Inject constructor(
     private val synthesizer: SpeechSynthesizing,
     private val translator: Translating,
     private val speechIntent: SpeechIntentBridge,
+    private val probe: LatencyProbe,
+    private val computeGate: ComputeGate,
     val catalog: LanguageCataloging,
     taskStore: TaskStore,
 ) : ViewModel() {
@@ -96,6 +102,7 @@ class InterpretationViewModel @Inject constructor(
             fontSize = preferences.fontSize,
             voiceOutEnabled = preferences.voiceOutEnabled,
             showsSourceLine = preferences.showsSourceLine,
+            incrementalTranslation = preferences.incrementalTranslation,
         ),
     )
     val state: StateFlow<InterpretationUiState> = _state.asStateFlow()
@@ -117,12 +124,21 @@ class InterpretationViewModel @Inject constructor(
     private val speakQueue = ArrayDeque<String>()
     private var speaking = false
     private var transcript = listOf<TranscriptEntry>()
+    private val stablePrefix = StablePrefixTracker()
+    private val committedChunks = mutableMapOf<UUID, MutableList<String>>()
 
     val keepsScreenAwake: Boolean
         get() = _state.value.session == SessionState.Listening || holdScreenAfterPause
 
     init {
-        translationPump = TranslationPump(translator, viewModelScope, ::fulfill)
+        translationPump = TranslationPump(
+            translator = translator,
+            scope = viewModelScope,
+            probe = probe,
+            gate = computeGate,
+            onResult = ::fulfill,
+            onProgress = ::fulfillProgress,
+        )
         viewModelScope.launch { bootstrap() }
     }
 
@@ -290,6 +306,14 @@ class InterpretationViewModel @Inject constructor(
     fun setShowsSource(enabled: Boolean) {
         preferences.showsSourceLine = enabled
         _state.update { it.copy(showsSourceLine = enabled) }
+    }
+
+    fun setIncremental(enabled: Boolean) {
+        preferences.incrementalTranslation = enabled
+        // Mid-utterance switching would mix whole-sentence and fragment translations.
+        committedChunks.clear()
+        stablePrefix.reset()
+        _state.update { it.copy(incrementalTranslation = enabled) }
     }
 
     fun setVoiceOut(enabled: Boolean) {
@@ -483,8 +507,6 @@ class InterpretationViewModel @Inject constructor(
     private fun enqueueTranslation(line: CaptionLine, isFinal: Boolean) {
         val text = line.sourceText.trim()
         if (text.isEmpty()) return
-        if (!isFinal) return
-        if (sentSourceText[line.id] == text) return
         val s = _state.value
         val from = if (SpokenText.scriptIsDecisive(text)) {
             SpokenText.inferFromScript(text, s.sourceLanguage)
@@ -492,6 +514,17 @@ class InterpretationViewModel @Inject constructor(
             line.source
         }
         val to = s.targetLanguage
+        if (s.incrementalTranslation) {
+            enqueueIncremental(line, from, to, text, isFinal)
+            return
+        }
+        if (!isFinal) {
+            // Same speculation as face-to-face: the direction of this utterance is known
+            // even though we are not translating it yet.
+            viewModelScope.launch { translationPump.speculate(from, to, text) }
+            return
+        }
+        if (sentSourceText[line.id] == text) return
         val previous = lastFinalSource["${from.translateTag}-${to.translateTag}"].orEmpty()
             .let { if (it == text) "" else it }
         val job = TranslationJob(
@@ -508,22 +541,100 @@ class InterpretationViewModel @Inject constructor(
         translationPump.submit(job)
     }
 
+    /**
+     * Incremental mode: translate each clause once, as soon as it stops changing, and
+     * append the result. Nothing already shown is ever revised.
+     */
+    private fun enqueueIncremental(
+        line: CaptionLine,
+        from: AppLanguage,
+        to: AppLanguage,
+        text: String,
+        isFinal: Boolean,
+    ) {
+        val chunk = stablePrefix.update(line.id, text, isFinal)
+        if (isFinal) sentSourceText[line.id] = text
+        if (chunk.isBlank()) {
+            if (isFinal) settleIncremental(line.id, to)
+            return
+        }
+        val job = TranslationJob(
+            utteranceId = line.id,
+            from = from,
+            to = to,
+            text = chunk,
+            isFinal = isFinal,
+            generation = ++translationGeneration,
+            previousSource = "",
+            append = true,
+        )
+        translationPump.submit(job)
+    }
+
+    private fun settleIncremental(id: UUID, to: AppLanguage) {
+        val joined = committedChunks[id]?.reduceOrNull { acc, chunk ->
+            SpokenText.joinSegments(acc, chunk, to)
+        }
+        stablePrefix.forget(id)
+        if (joined.isNullOrBlank()) return
+        applyTranslation(id, joined, settle = true)
+        committedChunks.remove(id)
+        schedulePersist()
+        enqueueSpeech(id, joined)
+    }
+
     private fun fulfill(job: TranslationJob, text: String) {
         val trimmed = text.trim()
         if (trimmed.isEmpty()) return
         val id = aliases[job.utteranceId] ?: job.utteranceId
+        if (job.append) {
+            val chunks = committedChunks.getOrPut(id) { mutableListOf() }
+            chunks += trimmed
+            val joined = chunks.reduce { acc, chunk -> SpokenText.joinSegments(acc, chunk, job.to) }
+            applyTranslation(id, joined, job.isFinal)
+            if (job.isFinal) {
+                committedChunks.remove(id)
+                stablePrefix.forget(id)
+                lastFinalSource["${job.from.translateTag}-${job.to.translateTag}"] = sentSourceText[id] ?: job.text
+                schedulePersist()
+                enqueueSpeech(id, joined)
+            }
+            return
+        }
         val appliedCount = lastAppliedSourceCount[id] ?: 0
         if (!job.isFinal && appliedCount > job.text.length) return
         lastAppliedSourceCount[id] = maxOf(appliedCount, job.text.length)
         if (job.isFinal) lastFinalSource["${job.from.translateTag}-${job.to.translateTag}"] = job.text
-        _state.update { it.copy(pane = it.pane.applyTranslation(id, trimmed, job.isFinal)) }
-        transcript = transcript.map { entry ->
-            if (entry.id == id) entry.copy(translatedText = trimmed, isFinal = entry.isFinal || job.isFinal) else entry
-        }
+        applyTranslation(id, trimmed, job.isFinal)
         if (job.isFinal) {
             schedulePersist()
             enqueueSpeech(id, trimmed)
         }
+    }
+
+    private fun applyTranslation(id: UUID, text: String, settle: Boolean) {
+        _state.update { it.copy(pane = it.pane.applyTranslation(id, text, settle)) }
+        transcript = transcript.map { entry ->
+            if (entry.id == id) {
+                entry.copy(translatedText = text, isFinal = entry.isFinal || settle)
+            } else {
+                entry
+            }
+        }
+    }
+
+    /** Mid-flight tokens. Pane only — the transcript and the store never see unfinished text. */
+    private fun fulfillProgress(job: TranslationJob, text: String) {
+        val id = aliases[job.utteranceId] ?: job.utteranceId
+        val growing = if (job.append) {
+            val joined = committedChunks[id]?.reduceOrNull { acc, chunk ->
+                SpokenText.joinSegments(acc, chunk, job.to)
+            }.orEmpty()
+            if (joined.isEmpty()) text else SpokenText.joinSegments(joined, text, job.to)
+        } else {
+            text
+        }
+        _state.update { it.copy(pane = it.pane.applyTranslation(id, growing, false)) }
     }
 
     private fun enqueueSpeech(utteranceId: UUID, translated: String) {
@@ -618,6 +729,8 @@ class InterpretationViewModel @Inject constructor(
         sentSourceText.clear()
         lastFinalSource.clear()
         aliases.clear()
+        committedChunks.clear()
+        stablePrefix.reset()
         spokenPrefixes.clear()
         speakQueue.clear()
         debounceJobs.values.forEach { it.cancel() }

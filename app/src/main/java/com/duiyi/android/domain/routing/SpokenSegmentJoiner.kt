@@ -12,13 +12,21 @@ class SpokenSegmentJoiner {
     private val buffer = StringBuilder()
     private var lastIngestNs = 0L
 
+    /**
+     * How long the most recent release sat in the buffer, or -1 if the last flush
+     * released nothing measurable (a force-flush has no caller timestamp).
+     * Read by the latency probe; not used for control flow.
+     */
+    var lastReleaseHeldNs: Long = -1L
+        private set
+
     fun ingest(nowNs: Long, language: AppLanguage, text: String, isFinal: Boolean): List<Utterance> {
         val normalized = SpokenText.normalizeAsr(text, language)
         if (normalized.isEmpty()) return emptyList()
         val out = mutableListOf<Utterance>()
         val heldLanguage = this.language
         if (heldLanguage != null && heldLanguage != language && buffer.isNotEmpty()) {
-            flush()?.let { out += it }
+            flush(nowNs)?.let { out += it }
         }
         if (!isFinal) {
             out += Utterance(utteranceId, language, preview(language, normalized), false)
@@ -29,13 +37,13 @@ class SpokenSegmentJoiner {
             TranslationPolicy.isSentenceLike(normalized, language) &&
             !SpokenText.isContinuation(normalized, held, language)
         ) {
-            flush()?.let { out += it }
+            flush(nowNs)?.let { out += it }
         }
         append(language, normalized)
         lastIngestNs = nowNs
         val combined = buffer.toString()
         if (shouldRelease(combined, language)) {
-            flush()?.let { out += it }
+            flush(nowNs)?.let { out += it }
         } else {
             out += Utterance(utteranceId, language, combined, false)
         }
@@ -45,10 +53,11 @@ class SpokenSegmentJoiner {
     fun tick(nowNs: Long): Utterance? {
         if (buffer.isEmpty()) return null
         if (nowNs - lastIngestNs < HOLD_NS) return null
-        return flush()
+        return flush(nowNs)
     }
 
-    fun forceFlush(): Utterance? = flush()
+    /** No caller timestamp available here, so this release reports no hold duration. */
+    fun forceFlush(): Utterance? = flush(0L)
 
     private fun preview(language: AppLanguage, text: String): String {
         if (buffer.isEmpty() || this.language != language) return text
@@ -70,12 +79,17 @@ class SpokenSegmentJoiner {
     private fun shouldRelease(text: String, language: AppLanguage): Boolean =
         TranslationPolicy.isSentenceLike(text, language) || TranslationPolicy.isPacked(text, language)
 
-    private fun flush(): Utterance? {
+    private fun flush(nowNs: Long): Utterance? {
         val held = language ?: return null
         val text = buffer.toString().trim()
         if (text.isEmpty()) {
             reset()
             return null
+        }
+        lastReleaseHeldNs = if (nowNs > 0L && lastIngestNs > 0L && nowNs >= lastIngestNs) {
+            nowNs - lastIngestNs
+        } else {
+            -1L
         }
         val utterance = Utterance(utteranceId, held, text, true)
         reset()

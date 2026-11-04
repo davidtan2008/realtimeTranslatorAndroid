@@ -1,5 +1,9 @@
 # 04 实现原理 · Android
 
+> ⚠️ **本文写于实现之前。** 第 2 节（听写会话）描述的 `SpeechRecognizer` 自采 + 系统静音窗口，在荣耀真机上换成了 **`AudioRecord` → Silero VAD → SenseVoice 整段解码**；第 5 节（翻译节流）描述的「部分结果节流送译」已被删除，现在**只译 final**；第 9 节（模型准备）现在是 sherpa 模型 + 2.49 GB GGUF 三段下载。
+>
+> 仍然成立的是流水线形状、`UtteranceAssembler`、面对面路由、同传朗读、任务落盘点、并发模型、错误到文案。实况见 [`09-current-state.md`](09-current-state.md)，延迟见 [`10-latency-optimization.md`](10-latency-optimization.md)。
+
 把「麦克风里的 PCM」变成「正确一侧屏幕上的译文」，可选再变成「耳机里的一句朗读」。本节是运行时，不是目录结构。
 
 ---

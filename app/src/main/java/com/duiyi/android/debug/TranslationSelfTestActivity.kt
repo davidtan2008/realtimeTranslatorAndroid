@@ -7,6 +7,7 @@ import androidx.lifecycle.lifecycleScope
 import com.duiyi.android.domain.AppLanguage
 import com.duiyi.android.domain.Translating
 import com.duiyi.android.services.DuiyiLog
+import com.duiyi.android.services.translation.LlamaNative
 import dagger.hilt.android.AndroidEntryPoint
 import java.io.File
 import javax.inject.Inject
@@ -36,6 +37,11 @@ class TranslationSelfTestActivity : ComponentActivity() {
             }
             try {
                 log("start")
+                // Repack kernels are chosen at model load time and reported only at DEBUG
+                // level, which is filtered out by default. Turn it on so this run's
+                // files/llama-jni.log records which Q4_K kernel actually got used.
+                LlamaNative.setVerboseLogging(true)
+                log("verbose logging on (see files/llama-jni.log for repack/arm arch lines)")
                 val prepareMs = measureTimeMillis {
                     translator.prepare(
                         listOf(

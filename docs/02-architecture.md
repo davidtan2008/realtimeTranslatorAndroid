@@ -1,5 +1,7 @@
 # 02 架构设计 · Android
 
+> ⚠️ **分层与模块注册部分仍与代码一致**；涉及具体引擎名字的地方已过时（本文写 ML Kit / 端侧 `SpeechRecognizer`，实际是 TranslateGemma / SenseVoice）。另外本文写的 `TaskSession`、`LanguageCatalog`、`AppEnvironment`、`DuiyiNavHost.kt` 等名字与代码里的 `ServiceProtocols.kt`、`MainActivity.kt` 不完全对得上。以 [`09-current-state.md`](09-current-state.md) 为准。
+
 目标：在 Android 上复刻 iOS 对译的**可注册功能平台**——不合并面对面 / 同声传译核心逻辑，共用任务、历史、总结、语言能力。
 
 产品规则：[`01-product-prototype.md`](01-product-prototype.md)

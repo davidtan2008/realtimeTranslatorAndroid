@@ -44,6 +44,49 @@ class SpokenSegmentJoinerTest {
         assertTrue(flushed.isFinal)
     }
 
+    /**
+     * The release latency is what the latency probe reports as "joiner hold". It has to be
+     * read off during the flush, because flush() resets the stamp it is derived from.
+     *
+     * Note the non-zero ingest time: 0 is the "no ingest yet" sentinel, so an ingest at
+     * exactly t=0 legitimately reports no duration. System.nanoTime() is never 0 in practice.
+     */
+    @Test
+    fun timeoutFlushReportsHowLongTheFragmentWasHeld() {
+        val joiner = SpokenSegmentJoiner()
+        val ingestedAt = 1_000_000_000L
+        joiner.ingest(ingestedAt, AppLanguage.English, "OKAY", true)
+        joiner.tick(ingestedAt + SpokenSegmentJoiner.HOLD_NS)
+        assertEquals(SpokenSegmentJoiner.HOLD_NS, joiner.lastReleaseHeldNs)
+    }
+
+    @Test
+    fun ingestWithoutATimestampReportsNoHoldDuration() {
+        val joiner = SpokenSegmentJoiner()
+        joiner.ingest(0L, AppLanguage.English, "OKAY", true)
+        joiner.tick(SpokenSegmentJoiner.HOLD_NS)
+        assertEquals(-1L, joiner.lastReleaseHeldNs)
+    }
+
+    @Test
+    fun holdingLongerIsReportedAccurately() {
+        val joiner = SpokenSegmentJoiner()
+        val ingestedAt = 1_000_000_000L
+        joiner.ingest(ingestedAt, AppLanguage.English, "OKAY", true)
+        val releasedAt = ingestedAt + SpokenSegmentJoiner.HOLD_NS + 500_000_000L
+        joiner.tick(releasedAt)
+        assertEquals(SpokenSegmentJoiner.HOLD_NS + 500_000_000L, joiner.lastReleaseHeldNs)
+    }
+
+    /** A force-flush has no caller timestamp, so it must not invent one. */
+    @Test
+    fun forceFlushReportsNoHoldDuration() {
+        val joiner = SpokenSegmentJoiner()
+        joiner.ingest(5_000_000_000L, AppLanguage.English, "OKAY", true)
+        joiner.forceFlush()
+        assertEquals(-1L, joiner.lastReleaseHeldNs)
+    }
+
     @Test
     fun chineseShortsJoinWithoutSpace() {
         val joiner = SpokenSegmentJoiner()

@@ -111,6 +111,21 @@ fun ConversationScreen(
                 modifier = Modifier.clickable { viewModel.setAutoStart(!state.autoStartListening) },
             )
         }
+        Row(Modifier.fillMaxWidth()) {
+            androidx.compose.material3.Text(
+                if (state.incrementalTranslation) {
+                    Copy.incrementalOn(language)
+                } else {
+                    Copy.incrementalOff(language)
+                },
+                color = if (state.incrementalTranslation) Tokens.listen else Tokens.textSecondary,
+                modifier = Modifier.clickable { viewModel.setIncremental(!state.incrementalTranslation) },
+            )
+        }
+        androidx.compose.material3.Text(
+            Copy.incrementalHint(language),
+            color = Tokens.textSecondary,
+        )
         androidx.compose.material3.Text(
             Copy.clearCaptions(language),
             color = Tokens.textSecondary,

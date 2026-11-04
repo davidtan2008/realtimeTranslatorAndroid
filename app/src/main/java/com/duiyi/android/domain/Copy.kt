@@ -25,6 +25,30 @@ object Copy {
     fun openSettings(language: AppLanguage) = language.pick("去设置", "Open Settings", "設定を開く", "설정 열기", "เปิดการตั้งค่า", "Mở Cài đặt")
     fun autoStartOn(language: AppLanguage) = language.pick("自动开始", "Auto start", "自動開始", "자동 시작", "เริ่มอัตโนมัติ", "Tự bắt đầu")
     fun autoStartOff(language: AppLanguage) = language.pick("手动开始", "Manual", "手動", "수동", "เริ่มเอง", "Bắt đầu tay")
+    fun incrementalOn(language: AppLanguage) = language.pick(
+        "边说边译（快，长句更早出译文）",
+        "Translate as you speak (faster, earlier text on long sentences)",
+        "話しながら翻訳（速い・長文で早く出る）",
+        "말하면서 번역(빠름, 긴 문장에서 더 일찍)",
+        "แปลขณะพูด (เร็ว ข้อความยาวขึ้นเร็วขึ้น)",
+        "Dịch khi đang nói (nhanh hơn, câu dài ra sớm hơn)",
+    )
+    fun incrementalOff(language: AppLanguage) = language.pick(
+        "整句翻译（慢一点，译文更准）",
+        "Whole sentences (slower, more accurate)",
+        "文単位で翻訳（遅いが正確）",
+        "문장 단위 번역(느리지만 정확)",
+        "แปลทั้งประโยค (ช้ากว่า แต่แม่นกว่า)",
+        "Dịch cả câu (chậm hơn, chính xác hơn)",
+    )
+    fun incrementalHint(language: AppLanguage) = language.pick(
+        "边说边译按小段翻译，代词和时态可能不如整句准。",
+        "Translate as you speak uses small fragments; pronouns and tense may be less accurate than whole sentences.",
+        "話しながら翻訳は小刻みに訳すため、代名詞や時制が文単位より不正確なことがあります。",
+        "말하면서 번역은 조각으로 번역하므로 대명사와 시제가 문장 단위보다 부정확할 수 있습니다.",
+        "แปลขณะพูดจะแปลทีละท่อน คำสรรพนามและกาลอาจแม่นน้อยกว่าแปลทั้งประโยค",
+        "Dịch khi đang nói chia thành từng đoạn; đại từ và thì có thể kém chính xác hơn.",
+    )
     fun summarize(language: AppLanguage) = language.pick("总结这次对话", "Summarize conversation", "この会話を要約", "이 대화 요약", "สรุปบทสนทนานี้", "Tóm tắt cuộc trò chuyện")
     fun summaryTitle(language: AppLanguage) = language.pick("对话总结", "Conversation summary", "会話の要約", "대화 요약", "สรุปบทสนทนา", "Tóm tắt cuộc trò chuyện")
     fun summaryLoading(language: AppLanguage) = language.pick("正在用本机模型整理…", "Summarizing on this phone…", "この端末上で要約しています…", "이 기기에서 요약하는 중…", "กำลังสรุปบนเครื่องนี้…", "Đang tóm tắt trên máy này…")

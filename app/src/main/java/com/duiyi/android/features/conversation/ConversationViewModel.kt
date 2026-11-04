@@ -31,7 +31,10 @@ import com.duiyi.android.domain.TranslationJob
 import com.duiyi.android.domain.TranslationPolicy
 import com.duiyi.android.domain.Utterance
 import com.duiyi.android.domain.routing.LanguageRouter
+import com.duiyi.android.domain.routing.StablePrefixTracker
 import com.duiyi.android.domain.routing.UtteranceAssembler
+import com.duiyi.android.services.ComputeGate
+import com.duiyi.android.services.LatencyProbe
 import com.duiyi.android.services.speech.SpeechEngineException
 import com.duiyi.android.services.speech.SpeechIntentBridge
 import com.duiyi.android.services.translation.TranslationPump
@@ -56,6 +59,7 @@ data class ConversationUiState(
     val userPane: PaneState = PaneState.Empty,
     val peerPane: PaneState = PaneState.Empty,
     val autoStartListening: Boolean = true,
+    val incrementalTranslation: Boolean = false,
     val hasActiveTask: Boolean = false,
     val taskStartedAt: Instant? = null,
     val error: DuiyiError? = null,
@@ -79,6 +83,8 @@ class ConversationViewModel @Inject constructor(
     private val audioSession: AudioSessionConfiguring,
     private val translator: Translating,
     private val speechIntent: SpeechIntentBridge,
+    private val probe: LatencyProbe,
+    private val computeGate: ComputeGate,
     val catalog: LanguageCataloging,
     taskStore: TaskStore,
 ) : ViewModel() {
@@ -89,6 +95,7 @@ class ConversationViewModel @Inject constructor(
             peerLanguage = preferences.peerLanguage,
             fontSize = preferences.fontSize,
             autoStartListening = preferences.autoStartListening,
+            incrementalTranslation = preferences.incrementalTranslation,
         ),
     )
     val state: StateFlow<ConversationUiState> = _state.asStateFlow()
@@ -108,12 +115,21 @@ class ConversationViewModel @Inject constructor(
     private var lastCommittedLanguage: AppLanguage? = null
     private var lastCommittedAt = 0L
     private var transcript = listOf<TranscriptEntry>()
+    private val stablePrefix = StablePrefixTracker()
+    private val committedChunks = mutableMapOf<UUID, MutableList<String>>()
 
     val keepsScreenAwake: Boolean
         get() = _state.value.session == SessionState.Listening || holdScreenAfterPause
 
     init {
-        translationPump = TranslationPump(translator, viewModelScope, ::fulfill)
+        translationPump = TranslationPump(
+            translator = translator,
+            scope = viewModelScope,
+            probe = probe,
+            gate = computeGate,
+            onResult = ::fulfill,
+            onProgress = ::fulfillProgress,
+        )
         viewModelScope.launch { bootstrap() }
     }
 
@@ -254,6 +270,13 @@ class ConversationViewModel @Inject constructor(
     fun setAutoStart(enabled: Boolean) {
         preferences.autoStartListening = enabled
         _state.update { it.copy(autoStartListening = enabled) }
+    }
+
+    fun setIncremental(enabled: Boolean) {
+        preferences.incrementalTranslation = enabled
+        // Mid-utterance switching would mix whole-sentence and fragment translations.
+        resetTranslationTracking()
+        _state.update { it.copy(incrementalTranslation = enabled) }
     }
 
     fun clearCaptions() {
@@ -484,11 +507,21 @@ class ConversationViewModel @Inject constructor(
     private fun enqueueTranslation(line: CaptionLine, isFinal: Boolean) {
         val text = line.sourceText.trim()
         if (text.isEmpty()) return
-        if (!isFinal) return
-        if (sentSourceText[line.id] == text) return
         val s = _state.value
         val from = line.source
         val to = LanguageRouter.targetLanguage(line.source, s.userLanguage, s.peerLanguage)
+        if (s.incrementalTranslation) {
+            enqueueIncremental(line, from, to, text, isFinal)
+            return
+        }
+        if (!isFinal) {
+            // Not translated yet, but the direction is known: warm the KV for it so the
+            // real call only pays for whatever the final text adds. Self-gating on the
+            // pump being idle, so this never delays a translation someone is waiting for.
+            viewModelScope.launch { translationPump.speculate(from, to, text) }
+            return
+        }
+        if (sentSourceText[line.id] == text) return
         val previous = lastFinalSource[pairKey(from, to)].orEmpty().let { if (it == text) "" else it }
         val job = TranslationJob(
             utteranceId = line.id,
@@ -503,24 +536,122 @@ class ConversationViewModel @Inject constructor(
         translationPump.submit(job)
     }
 
+    /**
+     * Incremental mode: translate each clause once, as soon as it stops changing, and
+     * append the result. Nothing already on screen is ever revised — that is what made
+     * the earlier attempt at partial translation unreadable.
+     */
+    private fun enqueueIncremental(
+        line: CaptionLine,
+        from: AppLanguage,
+        to: AppLanguage,
+        text: String,
+        isFinal: Boolean,
+    ) {
+        val chunk = stablePrefix.update(line.id, text, isFinal)
+        if (isFinal) sentSourceText[line.id] = text
+        if (chunk.isBlank()) {
+            // Everything was already translated clause by clause; the line just needs
+            // settling so it stops rendering as in-progress.
+            if (isFinal) settleIncremental(line.id, from, to)
+            return
+        }
+        val job = TranslationJob(
+            utteranceId = line.id,
+            from = from,
+            to = to,
+            text = chunk,
+            isFinal = isFinal,
+            generation = ++translationGeneration,
+            previousSource = "",
+            append = true,
+        )
+        translationPump.submit(job)
+    }
+
+    private fun settleIncremental(id: UUID, from: AppLanguage, to: AppLanguage) {
+        val joined = committedChunks[id]?.reduceOrNull { acc, chunk ->
+            SpokenText.joinSegments(acc, chunk, to)
+        }
+        stablePrefix.forget(id)
+        if (joined.isNullOrBlank()) return
+        applyTranslation(id, joined, settle = true)
+        committedChunks.remove(id)
+        schedulePersist()
+    }
+
     private fun fulfill(job: TranslationJob, text: String) {
         val trimmed = text.trim()
         if (trimmed.isEmpty()) return
         val id = aliases[job.utteranceId] ?: job.utteranceId
+        if (job.append) {
+            val chunks = committedChunks.getOrPut(id) { mutableListOf() }
+            chunks += trimmed
+            val joined = chunks.reduce { acc, chunk -> SpokenText.joinSegments(acc, chunk, job.to) }
+            applyTranslation(id, joined, job.isFinal)
+            if (job.isFinal) {
+                committedChunks.remove(id)
+                stablePrefix.forget(id)
+                lastFinalSource[pairKey(job.from, job.to)] = committedSourceFor(job, id)
+                schedulePersist()
+            }
+            return
+        }
         val applied = lastAppliedSourceCount[id] ?: 0
         if (!job.isFinal && applied > job.text.length) return
         lastAppliedSourceCount[id] = maxOf(applied, job.text.length)
         if (job.isFinal) lastFinalSource[pairKey(job.from, job.to)] = job.text
+        applyTranslation(id, trimmed, job.isFinal)
+        if (job.isFinal) schedulePersist()
+    }
+
+    /** Reconstructs the source text a finished incremental line covered, for context keys. */
+    private fun committedSourceFor(job: TranslationJob, id: UUID): String =
+        sentSourceText[id] ?: job.text
+
+    private fun applyTranslation(id: UUID, text: String, settle: Boolean) {
         _state.update {
             it.copy(
-                userPane = it.userPane.applyTranslation(id, trimmed, job.isFinal),
-                peerPane = it.peerPane.applyTranslation(id, trimmed, job.isFinal),
+                userPane = it.userPane.applyTranslation(id, text, settle),
+                peerPane = it.peerPane.applyTranslation(id, text, settle),
             )
         }
         transcript = transcript.map { entry ->
-            if (entry.id == id) entry.copy(translatedText = trimmed, isFinal = entry.isFinal || job.isFinal) else entry
+            if (entry.id == id) {
+                entry.copy(translatedText = text, isFinal = entry.isFinal || settle)
+            } else {
+                entry
+            }
         }
-        if (job.isFinal) schedulePersist()
+    }
+
+    /**
+     * Tokens arriving from the generator mid-flight. Pane only: the transcript and the
+     * store must never see an unfinished translation, and no persist is scheduled.
+     */
+    private fun fulfillProgress(job: TranslationJob, text: String) {
+        val id = aliases[job.utteranceId] ?: job.utteranceId
+        if (job.append) {
+            // The first chunk has no committed text yet, so the growing text is simply
+            // what has been generated for it so far.
+            val joined = committedChunks[id]?.reduceOrNull { acc, chunk ->
+                SpokenText.joinSegments(acc, chunk, job.to)
+            }.orEmpty()
+            val growing = if (joined.isEmpty()) text else SpokenText.joinSegments(joined, text, job.to)
+            _state.update {
+                it.copy(
+                    userPane = it.userPane.applyTranslation(id, growing, false),
+                    peerPane = it.peerPane.applyTranslation(id, growing, false),
+                )
+            }
+            return
+        }
+        _state.update {
+            it.copy(
+                userPane = it.userPane.applyTranslation(id, text, false),
+                peerPane = it.peerPane.applyTranslation(id, text, false),
+            )
+        }
     }
 
     private fun upsertTranscript(line: CaptionLine, speaker: SpeakerSide) {
@@ -617,15 +748,21 @@ class ConversationViewModel @Inject constructor(
     private fun resetCaptions() {
         transcript = emptyList()
         routedSide.clear()
-        lastAppliedSourceCount.clear()
-        sentSourceText.clear()
-        lastFinalSource.clear()
-        aliases.clear()
+        resetTranslationTracking()
         lastCommittedLanguage = null
         translationGeneration = 0
         _state.update {
             it.copy(userPane = PaneState.Empty, peerPane = PaneState.Empty, summary = null, summaryMessage = null)
         }
+    }
+
+    private fun resetTranslationTracking() {
+        lastAppliedSourceCount.clear()
+        sentSourceText.clear()
+        lastFinalSource.clear()
+        aliases.clear()
+        committedChunks.clear()
+        stablePrefix.reset()
     }
 
     private fun publishPanes() {

@@ -1,5 +1,9 @@
 # 03 技术选型 · Android
 
+> ⚠️ **本文写于实现之前，翻译一节的结论已被推翻。** 真机（荣耀 ALP-AN00）上 ML Kit 这条路没有走下去，实际实现是 **llama.cpp + TranslateGemma 4B**（翻译）与 **sherpa-onnx SenseVoice int8 + Silero VAD**（荣耀机听写）。
+>
+> 本文保留作为**选型推演记录**：第 1 节的 UI / 状态 / DI / 存储 / TTS / 音频 / 导出 / 最低系统各条仍然成立；第 3 节（翻译）与第 2 节（语音）中关于「ML Kit」「端侧 SpeechRecognizer」的结论请对照 [`09-current-state.md`](09-current-state.md) 第 1 节的偏差表阅读。
+
 部署目标：**Android 14（API 34）+**，targetSdk 35。真机优先。
 设备：能装本 App 的手机；**Gemini Nano 不是门槛**。中端机必须完整能用听写、翻译、任务、导出。
 

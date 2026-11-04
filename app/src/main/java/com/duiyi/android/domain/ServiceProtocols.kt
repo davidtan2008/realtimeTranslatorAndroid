@@ -184,6 +184,21 @@ interface Translating {
         text: String,
         previousSource: String = "",
     ): String
+
+    /**
+     * Text decoded so far by the generate that is currently in flight, growing token by
+     * token, or "" when nothing is running. Read from another thread than the one inside
+     * [translate], which is why it is not a suspend function.
+     */
+    fun inProgressText(): String = ""
+
+    /**
+     * Best-effort: warm the KV cache for a source sentence we have not been asked to
+     * translate yet, so the real call only has to decode whatever the final text adds.
+     * Implementations may ignore this; nothing depends on it having happened.
+     */
+    suspend fun prefillSource(from: AppLanguage, to: AppLanguage, text: String) = Unit
+
     suspend fun installedLanguages(): Set<AppLanguage>
     suspend fun downloadLanguage(language: AppLanguage)
     suspend fun download(onProgress: (Float) -> Unit = {})
@@ -209,4 +224,11 @@ data class TranslationJob(
     val isFinal: Boolean,
     val generation: Long,
     val previousSource: String = "",
+    /** Monotonic stamp taken when this job was queued, for the latency probe. 0 = unknown. */
+    val submittedNs: Long = 0L,
+    /**
+     * Incremental mode: this job covers one stable clause of a longer utterance, and its
+     * result must be appended to what is already shown rather than replace it.
+     */
+    val append: Boolean = false,
 )

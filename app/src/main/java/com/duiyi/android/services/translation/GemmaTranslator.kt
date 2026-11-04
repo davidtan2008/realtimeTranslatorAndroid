@@ -4,6 +4,7 @@ import com.duiyi.android.domain.AppLanguage
 import com.duiyi.android.domain.DuiyiError
 import com.duiyi.android.domain.Translating
 import com.duiyi.android.domain.TranslationPairStatus
+import com.duiyi.android.services.ComputeGate
 import com.duiyi.android.services.DuiyiLog
 import com.duiyi.android.services.speech.SpeechEngineException
 import javax.inject.Inject
@@ -19,6 +20,7 @@ import kotlinx.coroutines.withContext
 @Singleton
 class GemmaTranslator @Inject constructor(
     private val models: GemmaModelStore,
+    private val gate: ComputeGate,
 ) : Translating {
     private val lock = Mutex()
     @Volatile private var handle: Long = 0L
@@ -62,22 +64,29 @@ class GemmaTranslator @Inject constructor(
             lock.withLock {
                 if (handle == 0L) throw SpeechEngineException(DuiyiError.ModelsMissing)
                 val current = handle
-                coroutineScope {
-                    val timeout = launch {
-                        delay(180_000L)
-                        DuiyiLog.w("gemma generate timed out ${from.translateTag}->${to.translateTag}")
-                        LlamaNative.abort(current)
+                // Tell the speech path to stop re-decoding partials for the live line:
+                // it shares these cores and would stretch the generation.
+                gate.beginTranslation()
+                try {
+                    coroutineScope {
+                        val timeout = launch {
+                            delay(180_000L)
+                            DuiyiLog.w("gemma generate timed out ${from.translateTag}->${to.translateTag}")
+                            LlamaNative.abort(current)
+                        }
+                        try {
+                            LlamaNative.generate(
+                                current,
+                                split.prefix,
+                                split.suffix,
+                                TranslateGemmaPrompt.maxOutputTokens(text),
+                            )
+                        } finally {
+                            timeout.cancel()
+                        }
                     }
-                    try {
-                        LlamaNative.generate(
-                            current,
-                            split.prefix,
-                            split.suffix,
-                            TranslateGemmaPrompt.maxOutputTokens(text),
-                        )
-                    } finally {
-                        timeout.cancel()
-                    }
+                } finally {
+                    gate.endTranslation()
                 }
             }
         }
@@ -86,6 +95,30 @@ class GemmaTranslator @Inject constructor(
             DuiyiLog.w("gemma empty translation from=${from.translateTag} to=${to.translateTag}")
         }
         return cleaned
+    }
+
+    /**
+     * Decode template + source into KV and snapshot it, without generating. Cheap enough
+     * to run on a partial hypothesis; the snapshot is simply discarded if the final text
+     * turns out to differ.
+     */
+    override suspend fun prefillSource(from: AppLanguage, to: AppLanguage, text: String) {
+        if (from == to || text.isBlank() || !models.isReady()) return
+        ensureLoaded()
+        val split = TranslateGemmaPrompt.parts(from, to, text.trim())
+        withContext(Dispatchers.Default) {
+            lock.withLock {
+                val current = handle
+                if (current == 0L) return@withLock
+                LlamaNative.prefillSource(current, split.prefix, split.suffix)
+            }
+        }
+    }
+
+    override fun inProgressText(): String {
+        val current = handle
+        if (current == 0L) return ""
+        return runCatching { LlamaNative.progress(current) }.getOrDefault("")
     }
 
     override suspend fun installedLanguages(): Set<AppLanguage> =
@@ -135,9 +168,12 @@ class GemmaTranslator @Inject constructor(
 
     private suspend fun unload() {
         lock.withLock {
-            if (handle != 0L) {
-                LlamaNative.destroy(handle)
+            val current = handle
+            if (current != 0L) {
+                // Publish the teardown before freeing, so a concurrent inProgressText()
+                // bails out on 0 instead of reading a freed handle.
                 handle = 0L
+                LlamaNative.destroy(current)
             }
         }
     }

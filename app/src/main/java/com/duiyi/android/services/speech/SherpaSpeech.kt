@@ -12,7 +12,9 @@ import com.duiyi.android.domain.SpokenText
 import com.duiyi.android.domain.Utterance
 import com.duiyi.android.domain.routing.SpokenSegmentJoiner
 import com.duiyi.android.domain.routing.UtteranceAssembler
+import com.duiyi.android.services.ComputeGate
 import com.duiyi.android.services.DuiyiLog
+import com.duiyi.android.services.LatencyProbe
 import com.k2fsa.sherpa.onnx.FeatureConfig
 import com.k2fsa.sherpa.onnx.OfflineModelConfig
 import com.k2fsa.sherpa.onnx.OfflineRecognizer
@@ -24,10 +26,12 @@ import com.k2fsa.sherpa.onnx.VadModelConfig
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.system.measureTimeMillis
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
@@ -40,6 +44,8 @@ import kotlinx.coroutines.withContext
 class SherpaSpeech @Inject constructor(
     @ApplicationContext private val context: Context,
     private val models: SherpaModelStore,
+    private val probe: LatencyProbe,
+    private val gate: ComputeGate,
 ) {
     private val modelLock = Mutex()
     private var recognizer: OfflineRecognizer? = null
@@ -84,6 +90,9 @@ class SherpaSpeech @Inject constructor(
         val bilingual = languages.size > 1 && style == SpeechRecognitionStyle.LiveCaptions
 
         fun sendPiece(piece: Utterance) {
+            // Every joiner release arrives here, and only a release produces a final,
+            // so this is the one place the hold duration has to be read off.
+            if (piece.isFinal) probe.onJoinerRelease(joiner.lastReleaseHeldNs)
             val utterance = assembler.ingest(piece.language, piece.text, piece.isFinal)
             trySend(utterance ?: piece)
         }
@@ -126,35 +135,71 @@ class SherpaSpeech @Inject constructor(
 
                 val finals = Channel<FloatArray>(Channel.UNLIMITED)
                 val partials = Channel<FloatArray>(Channel.CONFLATED)
+                val ticks = Channel<Unit>(Channel.CONFLATED)
                 val decodeJob = launch {
                     try {
                         while (running && generation == token) {
-                            val queued = finals.tryReceive().getOrNull()
-                            val (samples, isFinal) = if (queued != null) {
-                                queued to true
+                            val queuedFinal = finals.tryReceive().getOrNull()
+                            val queuedPartial = if (queuedFinal == null) {
+                                partials.tryReceive().getOrNull()
                             } else {
-                                val partial = partials.tryReceive().getOrNull()
-                                if (partial != null) {
-                                    partial to false
-                                } else {
-                                    select {
-                                        finals.onReceive { it to true }
-                                        partials.onReceive { it to false }
-                                    }
+                                null
+                            }
+                            val next: Pair<FloatArray, Boolean>? = when {
+                                queuedFinal != null -> queuedFinal to true
+                                queuedPartial != null -> queuedPartial to false
+                                else -> select {
+                                    finals.onReceive { it to true }
+                                    partials.onReceive { it to false }
+                                    ticks.onReceive { null as Pair<FloatArray, Boolean>? }
                                 }
                             }
                             if (!running || generation != token) break
-                            val decoded = decodeSamples(rec, samples, primary)
-                            if (decoded.first.isNotBlank()) {
-                                emitAssembled(decoded.second, decoded.first, isFinal)
+                            if (next != null) {
+                                val samples = next.first
+                                val isFinal = next.second
+                                val overlapped = !isFinal && gate.translationInFlight
+                                if (overlapped && gate.skipPartialsWhileTranslating) {
+                                    // Re-decoding the whole utterance just to refresh the live
+                                    // source line can wait; Gemma has the big cores. Finals
+                                    // are never skipped, and the audio keeps accumulating.
+                                    probe.onPartialSkipped()
+                                } else {
+                                    var decoded = "" to primary
+                                    val decodeMs = measureTimeMillis {
+                                        decoded = decodeSamples(rec, samples, primary)
+                                    }
+                                    // overlapped is recorded even when we do not skip, which is
+                                    // what makes the two configurations comparable.
+                                    probe.onDecode(
+                                        isFinal = isFinal,
+                                        ms = decodeMs,
+                                        audioMs = samples.size.toLong() * 1000L / SAMPLE_RATE,
+                                        overlapped = overlapped,
+                                    )
+                                    if (decoded.first.isNotBlank()) {
+                                        emitAssembled(decoded.second, decoded.first, isFinal)
+                                    }
+                                }
                             }
+                            // Runs on ticks too, not only after a decode. Driving this from the
+                            // decode loop alone is what stranded short utterances: once the
+                            // speaker stopped, no further decode arrived to expire the hold.
                             joiner.tick(System.nanoTime())?.let(::sendPiece)
                         }
                     } catch (_: ClosedReceiveChannelException) {
                     }
                 }
+                val ticker = launch {
+                    while (running && generation == token) {
+                        delay(TICK_MS)
+                        ticks.trySend(Unit)
+                    }
+                }
                 consumeMic(mic, vad, finals, partials, token)
                 decodeJob.join()
+                ticker.cancel()
+                ticks.close()
                 joiner.forceFlush()?.let(::sendPiece)
             } catch (error: Exception) {
                 DuiyiLog.w("sherpa loop failed", error)
@@ -236,6 +281,7 @@ class SherpaSpeech @Inject constructor(
                 }
                 if (speaking) {
                     speech.append(window)
+                    probe.onSpeechWindow()
                     val now = System.nanoTime()
                     if (speech.size >= PARTIAL_SAMPLES && now - lastPartialAt >= PARTIAL_NS) {
                         lastPartialAt = now
@@ -257,6 +303,7 @@ class SherpaSpeech @Inject constructor(
                     }
                     speech.clear()
                     lastPartialAt = System.nanoTime()
+                    probe.onVadEndpoint(segment.samples.size, SAMPLE_RATE)
                     DuiyiLog.i("sherpa vad segment samples=${segment.samples.size}")
                     finals.send(segment.samples)
                 }
@@ -413,6 +460,12 @@ class SherpaSpeech @Inject constructor(
         private const val WINDOW = 512
         private const val PARTIAL_SAMPLES = SAMPLE_RATE
         private const val PARTIAL_NS = 1_000_000_000L
+
+        /**
+         * Cadence of the held-utterance expiry check. This bounds how late a buffered
+         * fragment can be released on top of [SpokenSegmentJoiner.HOLD_NS].
+         */
+        private const val TICK_MS = 200L
     }
 }
 

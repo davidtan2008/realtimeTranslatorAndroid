@@ -30,8 +30,18 @@ set(LLAMA_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
 set(LLAMA_BUILD_COMMON OFF CACHE BOOL "" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-# Snapdragon 8+ Gen 1 little cores may not run i8mm. Dotprod is enough.
-set(GGML_CPU_ARM_ARCH "armv8.2-a+dotprod" CACHE STRING "" FORCE)
+# Default to dotprod. Not for safety - the kernel reports HWCAP2_I8MM on every core of the
+# target SoC, so the little cores do implement it - but because the wider 8x8 Q4_K kernel
+# measured SLOWER here: generation is 8-31% slower with i8mm, most likely because this
+# workload is almost pure GEMV (batch=1 decode) while the 8x8 interleave targets GEMM.
+#
+# The switch is kept because it makes that a one-flag, reproducible A/B:
+#   ./gradlew assembleDebug -PduiyiArmArch=armv8.6-a+dotprod+i8mm
+# See docs/10-latency-optimization.md section 5.2 for the numbers.
+if(NOT GGML_CPU_ARM_ARCH)
+    set(GGML_CPU_ARM_ARCH "armv8.2-a+dotprod" CACHE STRING "" FORCE)
+endif()
+message(STATUS "Duiyi ARM arch: ${GGML_CPU_ARM_ARCH}")
 
 set(LLAMA_SRC "${CMAKE_CURRENT_SOURCE_DIR}/../../../../third_party/llama.cpp")
 if(EXISTS "${LLAMA_SRC}/CMakeLists.txt")

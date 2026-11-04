@@ -58,6 +58,15 @@ class PreferencesStore @Inject constructor(
         get() = prefs.getBoolean("showsSource", true)
         set(value) = prefs.edit().putBoolean("showsSource", value).apply()
 
+    /**
+     * Translate each stable clause as it forms instead of waiting for the whole utterance.
+     * Off by default: it brings the first translation forward on long sentences but the
+     * clauses are translated without their surrounding context, so quality can drop.
+     */
+    var incrementalTranslation: Boolean
+        get() = prefs.getBoolean("incrementalTranslation", false)
+        set(value) = prefs.edit().putBoolean("incrementalTranslation", value).apply()
+
     private fun language(key: String): AppLanguage? =
         prefs.getString(key, null)?.let { raw -> AppLanguage.entries.find { it.name == raw } }
 }
