@@ -1,7 +1,14 @@
 .gradle
 /build
 /app/build
+
+# Android NDK/CMake build intermediates
+.cxx/
 /.idea
 *.iml
 local.properties
 .DS_Store
+
+# A hand-placed Gradle distribution (workaround for a failed wrapper download) is
+# 138 MB and must never be committed. The wrapper fetches it into ~/.gradle instead.
+gradle/wrapper/*.zip
